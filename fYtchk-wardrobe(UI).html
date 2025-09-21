@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Wardrobe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a2e;
+            /* Added a subtle radial gradient for depth */
+            background-image: radial-gradient(circle, #24243a 0%, #1a1a2e 100%);
+            color: #cbd5e1;
+        }
+        /* Fade-in animation for the main container */
+        .container-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+        /* Enhanced card styling */
+        .card {
+            background-color: rgba(36, 36, 58, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            max-width: 95%;
+            width: 100%;
+            border: 1px solid #4a4a6c;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+        }
+        /* Gradient text for titles */
+        .text-gradient {
+            background-image: linear-gradient(to right, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        /* Gradient button with hover effects */
+        .button-gradient {
+            background-image: linear-gradient(to right, #8b5cf6, #ec4899);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .button-gradient:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        .button-gradient:active {
+            transform: scale(0.95);
+        }
+        .image-container {
+            border: 2px dashed #4a4a6c;
+            border-radius: 1rem;
+            position: relative;
+            overflow: hidden;
+            background-color: rgba(22, 22, 40, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 12rem;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+        .image-container:hover {
+            border-color: #8b5cf6;
+            background-color: rgba(22, 22, 40, 1);
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #ec4899;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: linear-gradient(to bottom, #24243a, #1a1a2e);
+            margin: auto;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            border: 1px solid #4a4a6c;
+            max-width: 90%;
+            animation: modalFadeIn 0.3s ease-out;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .disabled-button {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-image: none;
+            background-color: #3f3f46;
+        }
+        /* Improved navigation button styling */
+        .nav-button {
+            transition: all 0.3s ease;
+        }
+        .nav-button.active {
+            background-color: #8b5cf6;
+            color: white;
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.6);
+        }
+        .nav-button:not(.active) {
+            background-color: transparent;
+            color: #94a3b8;
+        }
+        .nav-button:not(.active):hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        /* Wardrobe item hover effect */
+        .wardrobe-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 1rem;
+            background-color: #2a2a40;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .wardrobe-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+        .wardrobe-item img {
+            transition: transform 0.3s ease;
+        }
+        .wardrobe-item:hover img {
+            transform: scale(1.1);
+        }
+        .wardrobe-item-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 50%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            padding: 0.75rem;
+        }
+        .wardrobe-item:hover .wardrobe-item-overlay {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-[#1a1a2e] text-slate-300">
+
+    <!-- Main Container -->
+    <div id="main-container" class="container-wrapper p-4 sm:p-6 pt-24">
+
+        <!-- Glassmorphism Navigation -->
+        <div class="fixed top-4 left-1/2 -translate-x-1/2 z-50">
+            <div class="flex justify-center space-x-2 bg-black/20 backdrop-blur-md p-2 rounded-full border border-slate-700 shadow-lg">
+                <button id="nav-wardrobe" class="nav-button py-2 px-6 rounded-full font-bold text-base">
+                    <i class="fas fa-tshirt mr-2"></i>My Wardrobe
+                </button>
+                <button id="nav-stylist" class="nav-button py-2 px-6 rounded-full font-bold text-base">
+                    <i class="fas fa-wand-magic-sparkles mr-2"></i>Outfit Stylist
+                </button>
+                <button id="nav-tryon" class="nav-button py-2 px-6 rounded-full font-bold text-base">
+                    <i class="fas fa-user-check mr-2"></i>Virtual Try-On
+                </button>
+            </div>
+        </div>
+        
+        <div class="fixed top-6 right-6 z-50 text-xs text-slate-500">
+            User ID: <span id="user-id" class="font-mono bg-slate-800 px-2 py-1 rounded">Loading...</span>
+        </div>
+
+        <!-- Wardrobe Page -->
+        <div id="wardrobe-page" class="hidden w-full">
+            <div class="card flex flex-col items-center space-y-8 max-w-7xl mx-auto">
+                <header class="w-full text-center">
+                    <h1 class="text-5xl font-extrabold text-white mb-2">My <span class="text-gradient">Virtual Wardrobe</span></h1>
+                    <p class="text-xl text-slate-400">All your clothes, perfectly organized.</p>
+                </header>
+
+                <section id="upload-wardrobe-section" class="w-full max-w-2xl space-y-6">
+                    <label for="wardrobe-file-input" class="w-full p-6 rounded-2xl text-slate-400 bg-slate-800/50 border-2 border-dashed border-slate-600 hover:border-purple-500 hover:bg-slate-800 transition duration-300 cursor-pointer flex flex-col items-center justify-center text-center">
+                        <i class="fas fa-cloud-upload-alt text-4xl mb-3 text-purple-400"></i>
+                        <span class="font-semibold text-slate-300">Drag & Drop or Click to Upload</span>
+                        <span class="text-sm">PNG, JPG, WEBP accepted</span>
+                    </label>
+                    <input type="file" id="wardrobe-file-input" multiple accept="image/*" class="hidden">
+                </section>
+
+                <section id="wardrobe-items-display" class="w-full space-y-10">
+                    <!-- Dynamic categories -->
+                    <div id="shirts-category" class="space-y-4 hidden"><h2 class="text-3xl font-bold text-white border-b-2 border-slate-700 pb-2">Shirts & Tops</h2><div id="shirts-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6"></div></div>
+                    <div id="t-shirts-category" class="space-y-4 hidden"><h2 class="text-3xl font-bold text-white border-b-2 border-slate-700 pb-2">T-Shirts</h2><div id="t-shirts-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6"></div></div>
+                    <div id="pants-category" class="space-y-4 hidden"><h2 class="text-3xl font-bold text-white border-b-2 border-slate-700 pb-2">Pants</h2><div id="pants-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6"></div></div>
+                    <div id="socks-category" class="space-y-4 hidden"><h2 class="text-3xl font-bold text-white border-b-2 border-slate-700 pb-2">Socks</h2><div id="socks-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6"></div></div>
+                    <div id="shoes-category" class="space-y-4 hidden"><h2 class="text-3xl font-bold text-white border-b-2 border-slate-700 pb-2">Shoes</h2><div id="shoes-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6"></div></div>
+                    <div id="accessories-category" class="space-y-4 hidden"><h2 class="text-3xl font-bold text-white border-b-2 border-slate-700 pb-2">Accessories</h2><div id="accessories-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6"></div></div>
+                    <div id="other-category" class="space-y-4 hidden"><h2 class="text-3xl font-bold text-white border-b-2 border-slate-700 pb-2">Other</h2><div id="other-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6"></div></div>
+
+                    <div id="no-items-message" class="text-center text-slate-500 text-lg p-12 rounded-2xl border-2 border-dashed border-slate-700 hidden">Your wardrobe is empty. Upload some clothes to see them here!</div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Outfit Stylist Page -->
+        <div id="stylist-page" class="hidden w-full">
+            <div class="card flex flex-col items-center space-y-8 max-w-4xl mx-auto">
+                <header class="w-full text-center">
+                    <h1 class="text-5xl font-extrabold text-white mb-2">Outfit <span class="text-gradient">Stylist</span></h1>
+                    <p class="text-xl text-slate-400">Let AI create the perfect outfit for any occasion.</p>
+                </header>
+
+                <div class="w-full space-y-6">
+                    <label for="occasion-input" class="block text-lg font-semibold text-slate-300">What's the occasion?</label>
+                    <input type="text" id="occasion-input" placeholder="e.g., Casual day out, Formal dinner, Beach party..." class="w-full p-4 rounded-lg bg-slate-800 border-2 border-slate-700 focus:border-purple-500 focus:ring-purple-500 focus:ring-opacity-50 focus:outline-none transition">
+                    <button id="generate-outfit-btn" class="button-gradient w-full py-4 text-lg font-bold text-white rounded-lg flex items-center justify-center">
+                        <i class="fas fa-wand-magic-sparkles mr-3"></i>Create My Outfit
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Virtual Try-On Page -->
+        <div id="tryon-page" class="hidden w-full">
+            <div class="card flex flex-col items-center space-y-8 max-w-6xl mx-auto">
+                <header class="w-full text-center">
+                    <h1 class="text-5xl font-extrabold text-white mb-2">Virtual <span class="text-gradient">Try-On</span></h1>
+                    <p class="text-xl text-slate-400">See how it looks before you wear it.</p>
+                </header>
+
+                <div class="w-full grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                    <!-- Left side: Inputs -->
+                    <div class="space-y-6">
+                        <!-- Step 1: Human Image -->
+                        <div class="space-y-3 p-4 rounded-lg bg-slate-800/50">
+                            <h3 class="font-bold text-xl text-white"><span class="bg-purple-600 rounded-full w-8 h-8 inline-flex items-center justify-center mr-3">1</span>Upload a photo of yourself</h3>
+                            <div id="human-image-container" class="image-container p-4">
+                                <img id="human-image-preview" class="hidden max-h-48 rounded-lg object-contain">
+                                <div id="human-image-placeholder" class="text-center text-slate-400 flex flex-col items-center">
+                                    <i class="fas fa-user text-3xl mb-2"></i>
+                                    <span>Click or drag to upload</span>
+                                </div>
+                                <input type="file" id="human-image-input" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer">
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Garment Image -->
+                        <div class="space-y-3 p-4 rounded-lg bg-slate-800/50">
+                            <h3 class="font-bold text-xl text-white"><span class="bg-purple-600 rounded-full w-8 h-8 inline-flex items-center justify-center mr-3">2</span>Select a garment from your wardrobe</h3>
+                             <div id="garment-image-container" class="image-container p-4">
+                                <img id="garment-image-preview" class="hidden max-h-48 rounded-lg object-contain">
+                                <div id="garment-image-placeholder" class="text-center text-slate-400 flex flex-col items-center">
+                                    <i class="fas fa-tshirt text-3xl mb-2"></i>
+                                    <span>Click to choose an item</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 3: Garment Description -->
+                        <div class="space-y-3 p-4 rounded-lg bg-slate-800/50">
+                             <h3 class="font-bold text-xl text-white"><span class="bg-purple-600 rounded-full w-8 h-8 inline-flex items-center justify-center mr-3">3</span>Describe the garment</h3>
+                             <input type="text" id="garment-desc-input" placeholder="e.g., 'red t-shirt', 'blue jeans'" class="w-full p-3 rounded-lg bg-slate-800 border-2 border-slate-700 focus:border-purple-500 focus:ring-purple-500 focus:ring-opacity-50 focus:outline-none transition">
+                        </div>
+
+                        <!-- Step 4: Generate -->
+                        <div class="space-y-3 p-4 rounded-lg bg-slate-800/50">
+                             <h3 class="font-bold text-xl text-white"><span class="bg-purple-600 rounded-full w-8 h-8 inline-flex items-center justify-center mr-3">4</span>Generate your try-on!</h3>
+                             <button id="generate-tryon-btn" class="button-gradient w-full py-4 text-lg font-bold text-white rounded-lg flex items-center justify-center disabled-button" disabled>
+                                <i class="fas fa-sync-alt mr-3"></i>Generate Image
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right side: Result -->
+                    <div class="space-y-4">
+                         <h3 class="font-bold text-2xl text-white text-center">Your Result</h3>
+                         <div id="result-container" class="image-container h-full min-h-[400px] p-4">
+                            <div id="result-loading-spinner" class="spinner hidden"></div>
+                            <img id="result-preview" class="hidden max-h-full max-w-full rounded-lg object-contain">
+                            <div id="result-placeholder" class="text-center text-slate-400">
+                                Your generated image will appear here.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outfit Suggestion Modal -->
+    <div id="outfit-modal" class="modal">
+        <div class="modal-content w-full max-w-4xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold text-white">Your <span class="text-gradient">Outfit Suggestion</span></h2>
+                <button id="close-modal-btn" class="text-slate-400 hover:text-white text-3xl">&times;</button>
+            </div>
+            <div id="modal-loading" class="text-center p-8">
+                <div class="spinner mx-auto"></div>
+                <p class="mt-4 text-lg">Finding the perfect outfit...</p>
+            </div>
+            <div id="modal-content-display" class="hidden">
+                 <p id="outfit-text" class="text-lg text-slate-300 mb-6 bg-slate-800/50 p-4 rounded-lg"></p>
+                 <div id="outfit-images" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+            </div>
+        </div>
+    </div>
+    
+     <!-- Garment Selection Modal -->
+    <div id="garment-selection-modal" class="modal">
+        <div class="modal-content w-full max-w-6xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold text-white">Select a <span class="text-gradient">Garment</span></h2>
+                <button id="close-garment-modal-btn" class="text-slate-400 hover:text-white text-3xl">&times;</button>
+            </div>
+            <div id="garment-modal-items" class="max-h-[70vh] overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 p-2">
+                <!-- Wardrobe items for selection will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+        const firebaseConfig = JSON.parse(document.getElementById('firebase-config').textContent);
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        let userId = null;
+        let wardrobeUnsubscribe = () => {};
+
+        // DOM Elements
+        const pages = {
+            'wardrobe-page': document.getElementById('wardrobe-page'),
+            'stylist-page': document.getElementById('stylist-page'),
+            'tryon-page': document.getElementById('tryon-page'),
+        };
+        const navButtons = {
+            'wardrobe-page': document.getElementById('nav-wardrobe'),
+            'stylist-page': document.getElementById('nav-stylist'),
+            'tryon-page': document.getElementById('nav-tryon'),
+        };
+        
+        const wardrobeFileInput = document.getElementById('wardrobe-file-input');
+        const noItemsMessage = document.getElementById('no-items-message');
+        const userIdDisplay = document.getElementById('user-id');
+
+        const occasionInput = document.getElementById('occasion-input');
+        const generateOutfitBtn = document.getElementById('generate-outfit-btn');
+        const outfitModal = document.getElementById('outfit-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const modalLoading = document.getElementById('modal-loading');
+        const modalContentDisplay = document.getElementById('modal-content-display');
+        const outfitText = document.getElementById('outfit-text');
+        const outfitImages = document.getElementById('outfit-images');
+        
+        // Try-on elements
+        const humanImageContainer = document.getElementById('human-image-container');
+        const humanImageInput = document.getElementById('human-image-input');
+        const humanImagePreview = document.getElementById('human-image-preview');
+        const humanImagePlaceholder = document.getElementById('human-image-placeholder');
+        const garmentImageContainer = document.getElementById('garment-image-container');
+        const garmentImagePreview = document.getElementById('garment-image-preview');
+        const garmentImagePlaceholder = document.getElementById('garment-image-placeholder');
+        const garmentDescInput = document.getElementById('garment-desc-input');
+        const generateTryonBtn = document.getElementById('generate-tryon-btn');
+        const resultContainer = document.getElementById('result-container');
+        const resultLoadingSpinner = document.getElementById('result-loading-spinner');
+        const resultPreview = document.getElementById('result-preview');
+        const resultPlaceholder = document.getElementById('result-placeholder');
+        const garmentSelectionModal = document.getElementById('garment-selection-modal');
+        const closeGarmentModalBtn = document.getElementById('close-garment-modal-btn');
+        const garmentModalItems = document.getElementById('garment-modal-items');
+
+        let humanImageBase64 = null;
+        let garmentImageBase64 = null;
+        
+        // --- AUTHENTICATION ---
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                userId = user.uid;
+                userIdDisplay.textContent = userId;
+                loadWardrobe();
+            } else {
+                signInAnonymously(auth).catch(error => console.error("Anonymous sign-in failed:", error));
+            }
+        });
+
+        // --- PAGE NAVIGATION ---
+        function showPage(pageId) {
+            Object.values(pages).forEach(page => page.classList.add('hidden'));
+            pages[pageId].classList.remove('hidden');
+            Object.values(navButtons).forEach(btn => btn.classList.remove('active'));
+            navButtons[pageId].classList.add('active');
+        }
+
+        Object.keys(navButtons).forEach(pageId => {
+            navButtons[pageId].addEventListener('click', () => showPage(pageId));
+        });
+
+        // --- WARDROBE MANAGEMENT ---
+        async function loadWardrobe() {
+            if (!userId) return;
+            const wardrobeRef = doc(db, "wardrobes", userId);
+            
+            wardrobeUnsubscribe(); // Unsubscribe from previous listener
+            wardrobeUnsubscribe = onSnapshot(wardrobeRef, (doc) => {
+                const wardrobeData = doc.exists() ? doc.data().items : [];
+                displayWardrobe(wardrobeData);
+            });
+        }
+
+        function displayWardrobe(items = []) {
+             const containers = {
+                'Shirt': document.getElementById('shirts-container'),
+                'T-Shirt': document.getElementById('t-shirts-container'),
+                'Pants': document.getElementById('pants-container'),
+                'Socks': document.getElementById('socks-container'),
+                'Shoes': document.getElementById('shoes-container'),
+                'Accessory': document.getElementById('accessories-container'),
+                'Other': document.getElementById('other-container'),
+             };
+            
+            Object.values(containers).forEach(c => c.innerHTML = ''); // Clear containers
+
+            if (items.length === 0) {
+                noItemsMessage.classList.remove('hidden');
+                Object.values(containers).forEach(c => c.parentElement.classList.add('hidden'));
+                return;
+            }
+            
+            noItemsMessage.classList.add('hidden');
+
+            items.forEach(item => {
+                const category = item.category || 'Other';
+                const container = containers[category];
+                if (container) {
+                    container.parentElement.classList.remove('hidden');
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'wardrobe-item group aspect-square';
+
+                    itemDiv.innerHTML = `
+                        <img src="${item.url}" class="w-full h-full object-cover">
+                        <div class="wardrobe-item-overlay">
+                           <span class="text-white font-bold text-sm">${item.name}</span>
+                           <button class="delete-item-btn text-red-500 hover:text-red-400 text-lg">
+                                <i class="fas fa-trash-alt"></i>
+                           </button>
+                        </div>
+                    `;
+                    container.appendChild(itemDiv);
+
+                    itemDiv.querySelector('.delete-item-btn').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteWardrobeItem(item);
+                    });
+                }
+            });
+        }
+
+        wardrobeFileInput.addEventListener('change', async (e) => {
+            if (!userId) return;
+            const files = e.target.files;
+            if (files.length === 0) return;
+
+            // Simple loading indicator
+            noItemsMessage.textContent = 'Uploading...';
+            noItemsMessage.classList.remove('hidden');
+
+            for (const file of files) {
+                // 1. Get Category from Gemini
+                const category = await classifyImage(file);
+                
+                // 2. Upload to Firebase Storage
+                const filePath = `wardrobes/${userId}/${Date.now()}_${file.name}`;
+                const storageRef = ref(storage, filePath);
+                await uploadBytes(storageRef, file);
+                const downloadURL = await getDownloadURL(storageRef);
+
+                // 3. Update Firestore
+                const wardrobeRef = doc(db, "wardrobes", userId);
+                const newItem = {
+                    id: `${Date.now()}_${file.name}`,
+                    name: file.name.split('.')[0],
+                    url: downloadURL,
+                    path: filePath,
+                    category: category,
+                    addedAt: new Date(),
+                };
+
+                try {
+                    await updateDoc(wardrobeRef, { items: arrayUnion(newItem) });
+                } catch (error) {
+                    if (error.code === 'not-found') {
+                        await setDoc(wardrobeRef, { items: [newItem] });
+                    } else {
+                        console.error("Error updating document: ", error);
+                    }
+                }
+            }
+            wardrobeFileInput.value = ''; // Reset input
+        });
+
+        async function deleteWardrobeItem(itemToDelete) {
+             if (!userId || !confirm(`Are you sure you want to delete ${itemToDelete.name}?`)) return;
+
+            // 1. Delete from Storage
+            const storageRef = ref(storage, itemToDelete.path);
+            await deleteObject(storageRef).catch(err => console.error("Error deleting from storage:", err));
+
+            // 2. Delete from Firestore
+            const wardrobeRef = doc(db, "wardrobes", userId);
+            await updateDoc(wardrobeRef, { items: arrayRemove(itemToDelete) });
+        }
+        
+        async function classifyImage(file) {
+            const base64Image = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: "Classify this clothing item into one of the following categories: Shirt, T-Shirt, Pants, Socks, Shoes, Accessory, Other. Respond with only the category name." },
+                        { inline_data: { mime_type: file.type, data: base64Image } }
+                    ]
+                }]
+            };
+        
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) throw new Error(`API call failed: ${response.status}`);
+                const result = await response.json();
+                return result.candidates[0].content.parts[0].text.trim();
+            } catch (error) {
+                console.error("Image classification failed:", error);
+                return "Other"; // Default category on failure
+            }
+        }
+
+
+        // --- OUTFIT STYLIST ---
+        generateOutfitBtn.addEventListener('click', async () => {
+             if (!userId) return;
+
+            outfitModal.style.display = 'flex';
+            modalLoading.classList.remove('hidden');
+            modalContentDisplay.classList.add('hidden');
+
+            const wardrobeRef = doc(db, "wardrobes", userId);
+            const docSnap = await getDoc(wardrobeRef);
+
+            if (!docSnap.exists() || docSnap.data().items.length < 2) {
+                outfitText.textContent = "You need at least two items in your wardrobe to generate an outfit.";
+                modalLoading.classList.add('hidden');
+                modalContentDisplay.classList.remove('hidden');
+                return;
+            }
+
+            const wardrobeItems = docSnap.data().items;
+            const itemList = wardrobeItems.map(item => `- ${item.name} (${item.category})`).join('\n');
+            const occasion = occasionInput.value || 'a casual day out';
+            
+            const prompt = `
+                From the following list of clothes, create an outfit for "${occasion}".
+                List:
+                ${itemList}
+                
+                Respond in JSON format with two keys: "outfit_items" (an array of item names from the list) and "reason" (a short, friendly explanation for your choices).
+            `;
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+            const payload = { contents: [{ parts: [{ text: prompt }] }] };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                 if (!response.ok) throw new Error(`API call failed: ${response.status}`);
+                const result = await response.json();
+                
+                const jsonString = result.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim();
+                const suggestion = JSON.parse(jsonString);
+
+                outfitText.textContent = suggestion.reason;
+                outfitImages.innerHTML = '';
+                suggestion.outfit_items.forEach(itemName => {
+                    const itemData = wardrobeItems.find(item => item.name === itemName);
+                    if (itemData) {
+                        outfitImages.innerHTML += `
+                            <div class="text-center">
+                                <img src="${itemData.url}" class="w-full h-auto rounded-lg mb-2 object-cover aspect-square">
+                                <p class="font-semibold">${itemData.name}</p>
+                            </div>
+                        `;
+                    }
+                });
+            } catch (error) {
+                console.error("Outfit generation error:", error);
+                outfitText.textContent = "Sorry, I couldn't generate an outfit right now. Please try again.";
+            } finally {
+                modalLoading.classList.add('hidden');
+                modalContentDisplay.classList.remove('hidden');
+            }
+        });
+        
+        closeModalBtn.addEventListener('click', () => outfitModal.style.display = 'none');
+
+
+        // --- VIRTUAL TRY-ON ---
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = error => reject(error);
+            });
+        }
+        
+        function checkTryonReadiness() {
+            if (humanImageBase64 && garmentImageBase64 && garmentDescInput.value.trim() !== '') {
+                generateTryonBtn.disabled = false;
+                generateTryonBtn.classList.remove('disabled-button');
+            } else {
+                generateTryonBtn.disabled = true;
+                generateTryonBtn.classList.add('disabled-button');
+            }
+        }
+
+        humanImageInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                humanImageBase64 = await fileToBase64(file);
+                humanImagePreview.src = URL.createObjectURL(file);
+                humanImagePreview.classList.remove('hidden');
+                humanImagePlaceholder.classList.add('hidden');
+                checkTryonReadiness();
+            }
+        });
+        
+        garmentImageContainer.addEventListener('click', async () => {
+            const wardrobeRef = doc(db, "wardrobes", userId);
+            const docSnap = await getDoc(wardrobeRef);
+            if (!docSnap.exists()) return;
+            
+            garmentModalItems.innerHTML = '';
+            const items = docSnap.data().items;
+            items.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'cursor-pointer p-2 rounded-lg hover:bg-slate-700 transition';
+                itemDiv.innerHTML = `<img src="${item.url}" class="w-full h-auto object-cover rounded-md aspect-square"><p class="text-center text-sm mt-1">${item.name}</p>`;
+                itemDiv.addEventListener('click', async () => {
+                    // Fetch image and convert to base64
+                    const response = await fetch(item.url);
+                    const blob = await response.blob();
+                    const file = new File([blob], item.name, { type: blob.type });
+                    garmentImageBase64 = await fileToBase64(file);
+                    
+                    garmentImagePreview.src = item.url;
+                    garmentImagePreview.classList.remove('hidden');
+                    garmentImagePlaceholder.classList.add('hidden');
+                    garmentDescInput.value = item.category || 'clothing';
+                    garmentSelectionModal.style.display = 'none';
+                    checkTryonReadiness();
+                });
+                garmentModalItems.appendChild(itemDiv);
+            });
+            garmentSelectionModal.style.display = 'flex';
+        });
+
+        closeGarmentModalBtn.addEventListener('click', () => garmentSelectionModal.style.display = 'none');
+        garmentDescInput.addEventListener('input', checkTryonReadiness);
+
+        generateTryonBtn.addEventListener('click', async () => {
+            if (!humanImageBase64 || !garmentImageBase64 || !garmentDescInput.value) return;
+
+            resultLoadingSpinner.classList.remove('hidden');
+            resultPreview.classList.add('hidden');
+            resultPlaceholder.classList.add('hidden');
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
+            const prompt = `Virtually try this ${garmentDescInput.value} on the person.`;
+
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        { inlineData: { mimeType: 'image/png', data: humanImageBase64 } },
+                        { inlineData: { mimeType: 'image/png', data: garmentImageBase64 } }
+                    ]
+                }],
+                generationConfig: {
+                    responseModalities: ['IMAGE']
+                },
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+        
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error.message || `API call failed with status: ${response.status}`);
+                }
+        
+                const result = await response.json();
+                const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+        
+                if (base64Data) {
+                    const imageUrl = `data:image/png;base64,${base64Data}`;
+                    resultPreview.src = imageUrl;
+                    resultPreview.classList.remove('hidden');
+                } else {
+                    resultPlaceholder.textContent = 'Failed to generate image. Please try again.';
+                    resultPlaceholder.classList.remove('hidden');
+                }
+        
+            } catch (error) {
+                console.error('Error generating image:', error);
+                resultPlaceholder.textContent = `Error: ${error.message}`;
+                resultPlaceholder.classList.remove('hidden');
+            } finally {
+                resultLoadingSpinner.classList.add('hidden');
+            }
+        });
+
+        // Initialize view
+        window.onload = function() {
+            showPage('wardrobe-page');
+        }
+
+    </script>
+    
+    <!-- Firebase Config -->
+    <script id="firebase-config" type="application/json">
+    {
+      "apiKey": "YOUR_API_KEY",
+      "authDomain": "YOUR_AUTH_DOMAIN",
+      "projectId": "YOUR_PROJECT_ID",
+      "storageBucket": "YOUR_STORAGE_BUCKET",
+      "messagingSenderId": "YOUR_MESSAGING_SENDER_ID",
+      "appId": "YOUR_APP_ID"
+    }
+    </script>
+</body>
+</html>
