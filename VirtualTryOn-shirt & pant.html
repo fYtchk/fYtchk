@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Try-On</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+        }
+        .container-wrapper {
+            background-color: #24243a;
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            max-width: 1100px;
+            width: 100%;
+        }
+        .card {
+            background-color: #1a1a2e;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+        }
+        .image-container {
+            border: 2px dashed #4a4a6c;
+            border-radius: 0.75rem;
+            position: relative;
+            overflow: hidden;
+            background-color: #161628;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 1 / 1;
+        }
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #0d9488;
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .upload-button {
+            background-color: #0d9488;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px #0f766e;
+        }
+        .upload-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px #0f766e;
+        }
+        .upload-button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px #0f766e;
+        }
+        .generate-button {
+            background-color: #8b5cf6;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px #7c48d6;
+        }
+        .generate-button:hover:enabled {
+            transform: translateY(-2px);
+            box-shadow: 0 6px #7c48d6;
+        }
+        .generate-button:active:enabled {
+            transform: translateY(2px);
+            box-shadow: 0 2px #7c48d6;
+        }
+        .generate-button:disabled {
+            background-color: #4a4a6c;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-[#1a1a2e] flex items-center justify-center min-h-screen p-6">
+
+    <div class="container-wrapper">
+        <h1 class="text-4xl font-bold text-center mb-10 text-white">Virtual Try-On</h1>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <!-- Step 1: Upload a person image -->
+            <div class="card flex flex-col items-center text-center">
+                <h2 class="text-xl font-semibold mb-2 text-gray-200">Step 1. Upload a person</h2>
+                <label for="personImage" class="cursor-pointer upload-button">
+                    Choose Image
+                </label>
+                <input type="file" id="personImage" class="hidden" accept="image/*">
+                <div id="personImageContainer" class="image-container w-full mt-6">
+                    <p id="personPlaceholder" class="text-gray-400">Preview will appear here</p>
+                    <img id="personPreview" class="hidden w-full h-full object-contain" alt="Person Preview">
+                </div>
+            </div>
+
+            <!-- Step 2: Upload a top garment -->
+            <div class="card flex flex-col items-center text-center">
+                <h2 class="text-xl font-semibold mb-2 text-gray-200">Step 2. Upload a top</h2>
+                <label for="topImage" class="cursor-pointer upload-button">
+                    Choose Image
+                </label>
+                <input type="file" id="topImage" class="hidden" accept="image/*">
+                <div id="topImageContainer" class="image-container w-full mt-6">
+                    <p id="topPlaceholder" class="text-gray-400">Preview will appear here</p>
+                    <img id="topPreview" class="hidden w-full h-full object-contain" alt="Top Preview">
+                </div>
+            </div>
+
+            <!-- Step 3: Upload a bottom garment -->
+            <div class="card flex flex-col items-center text-center">
+                <h2 class="text-xl font-semibold mb-2 text-gray-200">Step 3. Upload a bottom</h2>
+                <label for="bottomImage" class="cursor-pointer upload-button">
+                    Choose Image
+                </label>
+                <input type="file" id="bottomImage" class="hidden" accept="image/*">
+                <div id="bottomImageContainer" class="image-container w-full mt-6">
+                    <p id="bottomPlaceholder" class="text-gray-400">Preview will appear here</p>
+                    <img id="bottomPreview" class="hidden w-full h-full object-contain" alt="Bottom Preview">
+                </div>
+            </div>
+
+            <!-- Step 4: Generate and view results -->
+            <div class="card flex flex-col items-center text-center">
+                <h2 class="text-xl font-semibold mb-2 text-gray-200">Step 4. See Results</h2>
+                <div id="resultContainer" class="image-container w-full mt-6">
+                    <div id="loadingSpinner" class="hidden spinner"></div>
+                    <p id="resultPlaceholder" class="text-gray-400">Merged result will appear here</p>
+                    <img id="resultPreview" class="hidden w-full h-full object-contain" alt="Result Preview">
+                </div>
+                <button id="runButton" class="generate-button w-full mt-6" disabled>
+                    Generate Try-On
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const personInput = document.getElementById('personImage');
+        const topInput = document.getElementById('topImage');
+        const bottomInput = document.getElementById('bottomImage');
+        const personPreview = document.getElementById('personPreview');
+        const topPreview = document.getElementById('topPreview');
+        const bottomPreview = document.getElementById('bottomPreview');
+        const personPlaceholder = document.getElementById('personPlaceholder');
+        const topPlaceholder = document.getElementById('topPlaceholder');
+        const bottomPlaceholder = document.getElementById('bottomPlaceholder');
+        const runButton = document.getElementById('runButton');
+        const resultPreview = document.getElementById('resultPreview');
+        const resultPlaceholder = document.getElementById('resultPlaceholder');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        let personFile = null;
+        let topFile = null;
+        let bottomFile = null;
+
+        function checkReadiness() {
+            if (personFile && topFile && bottomFile) {
+                runButton.disabled = false;
+                runButton.textContent = 'Generate Try-On';
+            } else {
+                runButton.disabled = true;
+                runButton.textContent = 'Upload all images to enable';
+            }
+        }
+
+        async function readImageAsBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    resolve(reader.result.split(',')[1]);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        personInput.addEventListener('change', function(e) {
+            personFile = e.target.files[0];
+            if (personFile) {
+                const imageUrl = URL.createObjectURL(personFile);
+                personPreview.src = imageUrl;
+                personPreview.classList.remove('hidden');
+                personPlaceholder.classList.add('hidden');
+            } else {
+                personFile = null;
+                personPreview.src = '';
+                personPreview.classList.add('hidden');
+                personPlaceholder.classList.remove('hidden');
+            }
+            checkReadiness();
+        });
+
+        topInput.addEventListener('change', function(e) {
+            topFile = e.target.files[0];
+            if (topFile) {
+                const imageUrl = URL.createObjectURL(topFile);
+                topPreview.src = imageUrl;
+                topPreview.classList.remove('hidden');
+                topPlaceholder.classList.add('hidden');
+            } else {
+                topFile = null;
+                topPreview.src = '';
+                topPreview.classList.add('hidden');
+                topPlaceholder.classList.remove('hidden');
+            }
+            checkReadiness();
+        });
+
+        bottomInput.addEventListener('change', function(e) {
+            bottomFile = e.target.files[0];
+            if (bottomFile) {
+                const imageUrl = URL.createObjectURL(bottomFile);
+                bottomPreview.src = imageUrl;
+                bottomPreview.classList.remove('hidden');
+                bottomPlaceholder.classList.add('hidden');
+            } else {
+                bottomFile = null;
+                bottomPreview.src = '';
+                bottomPreview.classList.add('hidden');
+                bottomPlaceholder.classList.remove('hidden');
+            }
+            checkReadiness();
+        });
+
+        runButton.addEventListener('click', async function() {
+            if (!personFile || !topFile || !bottomFile) {
+                return;
+            }
+
+            // Show loading state
+            resultPlaceholder.classList.add('hidden');
+            resultPreview.classList.add('hidden');
+            loadingSpinner.classList.remove('hidden');
+
+            try {
+                const personBase64 = await readImageAsBase64(personFile);
+                const topBase64 = await readImageAsBase64(topFile);
+                const bottomBase64 = await readImageAsBase64(bottomFile);
+
+                const payload = {
+                    contents: [{
+                        parts: [
+                            { text: "Make the person in the first image wear the top from the second image and the bottom from the third image." },
+                            {
+                                inlineData: {
+                                    mimeType: personFile.type,
+                                    data: personBase64
+                                }
+                            },
+                            {
+                                inlineData: {
+                                    mimeType: topFile.type,
+                                    data: topBase64
+                                }
+                            },
+                            {
+                                inlineData: {
+                                    mimeType: bottomFile.type,
+                                    data: bottomBase64
+                                }
+                            }
+                        ]
+                    }],
+                    generationConfig: {
+                        responseModalities: ["TEXT", "IMAGE"],
+                    },
+                };
+
+                const apiKey = "AIzaSyCPUcLAetY9m0yb4DxYWNyonB89unXdHeU";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
+
+                let attempt = 0;
+                const maxAttempts = 3;
+                let response;
+
+                while (attempt < maxAttempts) {
+                    try {
+                        response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (response.status !== 429) {
+                            break;
+                        }
+                        attempt++;
+                        const delay = Math.pow(2, attempt) * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    } catch (e) {
+                        attempt++;
+                        if (attempt >= maxAttempts) throw e;
+                        const delay = Math.pow(2, attempt) * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error.message || `API call failed with status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+
+                if (base64Data) {
+                    const imageUrl = `data:image/png;base64,${base64Data}`;
+                    resultPreview.src = imageUrl;
+                    resultPreview.classList.remove('hidden');
+                } else {
+                    resultPlaceholder.textContent = 'Failed to generate image. Please try again.';
+                    resultPlaceholder.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                console.error('Error generating image:', error);
+                resultPlaceholder.textContent = `Error: ${error.message}`;
+                resultPlaceholder.classList.remove('hidden');
+            } finally {
+                loadingSpinner.classList.add('hidden');
+            }
+        });
+
+        window.onload = function() {
+            checkReadiness();
+        }
+    </script>
+</body>
+</html>
