@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Outfit Selector</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark charcoal */
+        }
+        .container {
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 flex items-center justify-center">
+    <div id="app" class="container max-w-4xl mx-auto p-8 rounded-2xl shadow-lg bg-gray-800 flex flex-col items-center space-y-8">
+        <!-- Header -->
+        <header class="w-full text-center">
+            <h1 class="text-4xl font-extrabold text-white mb-2">Outfit Creator</h1>
+            <p class="text-xl text-gray-400">Your personal style assistant.</p>
+        </header>
+
+        <!-- Upload and Categorization Section -->
+        <section id="upload-section" class="w-full space-y-6">
+            <div class="space-y-4">
+                <label class="block text-lg font-medium text-gray-300">
+                    Step 1: Upload your clothes.
+                </label>
+                <input type="file" id="file-input" multiple accept="image/*" class="w-full p-3 bg-gray-700 rounded-lg text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100 transition duration-300">
+            </div>
+
+            <!-- Uploaded Images Preview and Categorization -->
+            <div id="image-previews" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-4 rounded-lg border-2 border-dashed border-gray-600">
+                <p class="col-span-full text-center text-gray-500">
+                    Your uploaded clothes will appear here.
+                </p>
+            </div>
+
+            <!-- Occasion Input -->
+            <div class="space-y-4">
+                <label for="occasion-input" class="block text-lg font-medium text-gray-300">
+                    Step 2: Tell me about the occasion.
+                </label>
+                <input type="text" id="occasion-input" placeholder="e.g., a date, a casual day, a formal event" class="w-full p-3 rounded-lg bg-gray-700 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 transition duration-300">
+            </div>
+
+            <!-- Action Button -->
+            <button id="find-outfit-btn" class="w-full py-3 px-6 rounded-lg bg-violet-600 text-white font-bold text-lg hover:bg-violet-700 transition duration-300 shadow-lg">
+                Find My Outfit
+            </button>
+        </section>
+
+        <!-- Loading and Result Section -->
+        <section id="result-section" class="hidden w-full text-center space-y-8">
+            <!-- Loading Indicator -->
+            <div id="loading-message" class="flex flex-col items-center space-y-4">
+                <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-violet-500"></div>
+                <p class="text-xl font-medium text-gray-400">Creating the perfect outfit...</p>
+            </div>
+
+            <!-- Outfit Display -->
+            <div id="outfit-display" class="hidden flex flex-col items-center space-y-8">
+                <h2 class="text-3xl font-extrabold text-white">Your Perfect Outfit</h2>
+                <div class="flex flex-col sm:flex-row items-center justify-center space-y-6 sm:space-y-0 sm:space-x-8">
+                    <div class="flex flex-col items-center space-y-2">
+                        <img id="top-image" src="" alt="Selected Top" class="w-48 h-48 sm:w-64 sm:h-64 object-cover rounded-xl shadow-xl transition-all duration-300 transform hover:scale-105">
+                        <p class="text-lg font-semibold text-gray-300">Top</p>
+                    </div>
+                    <div class="text-3xl text-gray-400 font-bold hidden sm:block">+</div>
+                    <div class="flex flex-col items-center space-y-2">
+                        <img id="bottom-image" src="" alt="Selected Bottom" class="w-48 h-48 sm:w-64 sm:h-64 object-cover rounded-xl shadow-xl transition-all duration-300 transform hover:scale-105">
+                        <p class="text-lg font-semibold text-gray-300">Bottom</p>
+                    </div>
+                </div>
+                <div id="occasion-message" class="text-lg text-gray-400 italic mt-4"></div>
+            </div>
+
+            <button id="start-over-btn" class="w-full py-3 px-6 rounded-lg bg-gray-700 text-gray-200 font-bold text-lg hover:bg-gray-600 transition duration-300">
+                Start Over
+            </button>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const fileInput = document.getElementById('file-input');
+            const imagePreviews = document.getElementById('image-previews');
+            const occasionInput = document.getElementById('occasion-input');
+            const findOutfitBtn = document.getElementById('find-outfit-btn');
+            const uploadSection = document.getElementById('upload-section');
+            const resultSection = document.getElementById('result-section');
+            const loadingMessage = document.getElementById('loading-message');
+            const outfitDisplay = document.getElementById('outfit-display');
+            const topImage = document.getElementById('top-image');
+            const bottomImage = document.getElementById('bottom-image');
+            const occasionMessage = document.getElementById('occasion-message');
+            const startOverBtn = document.getElementById('start-over-btn');
+
+            let uploadedItems = [];
+
+            // API configuration
+            const apiKey = "AIzaSyCPUcLAetY9m0yb4DxYWNyonB89unXdHeU";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            // A simple message box function instead of alert
+            function showMessageBox(message) {
+                const messageBox = document.createElement('div');
+                messageBox.className = 'fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50';
+                messageBox.innerHTML = `
+                    <div class="bg-gray-800 p-8 rounded-xl shadow-2xl text-center space-y-4 max-w-sm">
+                        <p class="text-lg text-white">${message}</p>
+                        <button onclick="this.parentNode.parentNode.remove()" class="py-2 px-6 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition duration-300">OK</button>
+                    </div>
+                `;
+                document.body.appendChild(messageBox);
+            }
+
+            fileInput.addEventListener('change', (event) => {
+                uploadedItems = [];
+                imagePreviews.innerHTML = '';
+                if (event.target.files.length === 0) {
+                    imagePreviews.innerHTML = '<p class="col-span-full text-center text-gray-500">Your uploaded clothes will appear here.</p>';
+                    return;
+                }
+
+                Array.from(event.target.files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const imageDataUrl = e.target.result;
+                        const base64Data = imageDataUrl.split(',')[1];
+                        const mimeType = file.type;
+
+                        const previewContainer = document.createElement('div');
+                        previewContainer.className = 'relative group w-full h-48 overflow-hidden rounded-xl shadow-md transition-all duration-300 transform hover:scale-105';
+                        previewContainer.innerHTML = `
+                            <img src="${imageDataUrl}" alt="${file.name}" class="w-full h-full object-cover">
+                        `;
+                        imagePreviews.appendChild(previewContainer);
+                        
+                        uploadedItems.push({
+                            id: crypto.randomUUID(), // Assign a unique ID to each item
+                            fileName: file.name,
+                            base64Data: base64Data,
+                            mimeType: mimeType,
+                            dataUrl: imageDataUrl
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
+
+            findOutfitBtn.addEventListener('click', async () => {
+                const occasion = occasionInput.value.trim();
+                if (uploadedItems.length === 0) {
+                    showMessageBox('Please upload some clothing items first.');
+                    return;
+                }
+                if (!occasion) {
+                    showMessageBox('Please describe the occasion.');
+                    return;
+                }
+
+                // Hide upload section, show loading
+                uploadSection.classList.add('hidden');
+                resultSection.classList.remove('hidden');
+                loadingMessage.classList.remove('hidden');
+                outfitDisplay.classList.add('hidden');
+
+                try {
+                    // Step 1: Classify all items using Gemini API
+                    const classificationPromises = uploadedItems.map(item => classifyItem(item));
+                    const classifiedItems = await Promise.all(classificationPromises);
+
+                    const tops = classifiedItems.filter(item => item.category === 'top');
+                    const bottoms = classifiedItems.filter(item => item.category === 'bottom');
+
+                    if (tops.length === 0 || bottoms.length === 0) {
+                        throw new Error("Could not find at least one top and one bottom from your uploads. Please try again with different files.");
+                    }
+
+                    // Step 2: Select the best outfit from classified items
+                    const topList = tops.map(item => `Top ID: ${item.id}`).join('\n');
+                    const bottomList = bottoms.map(item => `Bottom ID: ${item.id}`).join('\n');
+
+                    const promptText = `
+                    You are a professional fashion stylist. I am looking for a top and a bottom to wear for the following occasion: "${occasion}".
+                    Please carefully review all the uploaded images. Some are tops and some are bottoms.
+
+                    Here is a list of available tops and their IDs:
+                    ${topList}
+
+                    Here is a list of available bottoms and their IDs:
+                    ${bottomList}
+                    
+                    Identify a single top and a single bottom from the provided images that would create the most aesthetically pleasing and appropriate outfit for this occasion.
+                    
+                    Even if no perfect match exists, you must select a top and a bottom from the IDs provided, choosing the best possible combination from the available items. Do not select items not listed.
+
+                    Your response must be a valid JSON object with the following structure:
+                    {
+                        "selectedTopId": "the ID of the selected top",
+                        "selectedBottomId": "the ID of the selected bottom",
+                        "reasoning": "A brief, one-sentence explanation for why you chose this outfit."
+                    }
+                    
+                    Do not add any text before or after the JSON object. Just provide the JSON.
+                    `;
+
+                    const outfitPayload = {
+                        contents: [{
+                            parts: [
+                                { text: promptText },
+                                ...uploadedItems.map(item => ({
+                                    inlineData: {
+                                        mimeType: item.mimeType,
+                                        data: item.base64Data
+                                    }
+                                }))
+                            ]
+                        }],
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            responseSchema: {
+                                "type": "OBJECT",
+                                "properties": {
+                                    "selectedTopId": { "type": "STRING" },
+                                    "selectedBottomId": { "type": "STRING" },
+                                    "reasoning": { "type": "STRING" }
+                                }
+                            }
+                        }
+                    };
+
+                    const outfitResponse = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(outfitPayload)
+                    });
+
+                    if (!outfitResponse.ok) {
+                        throw new Error(`HTTP error! status: ${outfitResponse.status}`);
+                    }
+                    
+                    const outfitResult = await outfitResponse.json();
+                    const jsonString = outfitResult.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!jsonString) {
+                        throw new Error("API response was not in the expected format.");
+                    }
+                    
+                    const finalOutfit = JSON.parse(jsonString);
+
+                    const selectedTop = uploadedItems.find(item => item.id === finalOutfit.selectedTopId);
+                    const selectedBottom = uploadedItems.find(item => item.id === finalOutfit.selectedBottomId);
+
+                    if (selectedTop && selectedBottom) {
+                        topImage.src = selectedTop.dataUrl;
+                        bottomImage.src = selectedBottom.dataUrl;
+                        occasionMessage.textContent = finalOutfit.reasoning;
+                    } else {
+                        throw new Error("Could not find the selected files in your uploaded items.");
+                    }
+
+                } catch (error) {
+                    console.error('Error fetching outfit:', error);
+                    showMessageBox(`Failed to get an outfit. Please try again. Error: ${error.message}`);
+                    return;
+                } finally {
+                    loadingMessage.classList.add('hidden');
+                    outfitDisplay.classList.remove('hidden');
+                }
+            });
+
+            // New function to classify a single item using the Gemini API
+            async function classifyItem(item) {
+                const classificationPrompt = `Is this a top or a bottom? Answer with a single word, either "top" or "bottom". Do not include any other text.`;
+                const payload = {
+                    contents: [{
+                        parts: [
+                            { text: classificationPrompt },
+                            {
+                                inlineData: {
+                                    mimeType: item.mimeType,
+                                    data: item.base64Data
+                                }
+                            }
+                        ]
+                    }]
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                const category = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase();
+                
+                return { ...item, category: category === 'top' || category === 'bottom' ? category : null };
+            }
+
+            startOverBtn.addEventListener('click', () => {
+                // Reset everything
+                uploadedItems = [];
+                fileInput.value = '';
+                imagePreviews.innerHTML = '<p class="col-span-full text-center text-gray-500">Your uploaded clothes will appear here.</p>';
+                occasionInput.value = '';
+                
+                resultSection.classList.add('hidden');
+                uploadSection.classList.remove('hidden');
+            });
+        });
+    </script>
+</body>
+</html>
