@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>fYtchk - Get Dressed Not Stressed</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a2e;
+            color: #cbd5e1;
+        }
+        .container-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card {
+            background-color: #24243a;
+            border-radius: 1.5rem;
+            padding: 2rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            max-width: 30rem;
+            width: 100%;
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+        }
+        .text-gradient {
+            background-image: linear-gradient(to right, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .button-gradient {
+            background-image: linear-gradient(to right, #8b5cf6, #ec4899);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .button-gradient:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        .button-gradient:active {
+            transform: scale(0.95);
+        }
+        .image-container {
+            border: 2px dashed #4a4a6c;
+            border-radius: 0.75rem;
+            position: relative;
+            overflow: hidden;
+            background-color: #161628;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 12rem;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #ec4899;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: linear-gradient(to bottom, #24243a, #1a1a2e);
+            margin: auto;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            border: 1px solid #4a4a6c;
+            max-width: 90%;
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .disabled-button {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-image: none;
+            background-color: #3f3f46;
+        }
+    </style>
+</head>
+<body class="bg-[#1a1a2e] text-blue-200">
+
+    <!-- Main Container -->
+    <div id="main-container" class="container-wrapper p-6">
+        <!-- AI Outfit Stylist Page -->
+        <div id="stylist-page" class="container-wrapper p-6">
+            <div class="card flex flex-col items-center space-y-8 max-w-4xl w-full">
+                <!-- Header -->
+                <header class="w-full text-center">
+                    <h1 class="text-4xl font-extrabold text-white mb-2">Outfit Stylist</h1>
+                    <p class="text-xl text-gray-400">Your personal style assistant.</p>
+                </header>
+        
+                <!-- Upload and Categorization Section -->
+                <section id="upload-section" class="w-full space-y-6">
+                    <div class="space-y-4">
+                        <label class="block text-lg font-medium text-gray-300">
+                            Step 1: Upload your clothes.
+                        </label>
+                        <input type="file" id="file-input" multiple accept="image/*" class="w-full p-3 rounded-lg text-gray-200 bg-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300 transition duration-300">
+                    </div>
+        
+                    <!-- Uploaded Images Preview and Categorization -->
+                    <div id="image-previews" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-4 rounded-lg border-2 border-dashed border-gray-600">
+                        <p class="col-span-full text-center text-gray-500">
+                            Your uploaded clothes will appear here.
+                        </p>
+                    </div>
+        
+                    <!-- Occasion Input -->
+                    <div class="space-y-4">
+                        <label for="occasion-input" class="block text-lg font-medium text-gray-300">
+                            Step 2: Tell me about the occasion.
+                        </label>
+                        <input type="text" id="occasion-input" placeholder="e.g., a date, a casual day, a formal event" class="w-full p-3 rounded-lg bg-gray-700 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition duration-300">
+                    </div>
+        
+                    <!-- Action Button -->
+                    <button id="find-outfit-btn" class="w-full py-3 px-6 rounded-lg bg-purple-600 text-white font-bold text-lg hover:bg-purple-700 transition duration-300 shadow-lg">
+                        Find My Outfit
+                    </button>
+                </section>
+        
+                <!-- Loading and Result Section -->
+                <section id="result-section" class="hidden w-full text-center space-y-8">
+                    <!-- Loading Indicator -->
+                    <div id="loading-message" class="flex flex-col items-center space-y-4">
+                        <div class="spinner"></div>
+                        <p class="text-xl font-medium text-gray-400">Creating the perfect outfit...</p>
+                    </div>
+        
+                    <!-- Outfit Display -->
+                    <div id="outfit-display" class="hidden flex flex-col items-center space-y-8">
+                        <h2 class="text-3xl font-extrabold text-white">Your Perfect Outfit</h2>
+                        <div class="flex flex-col sm:flex-row items-center justify-center space-y-6 sm:space-y-0 sm:space-x-8">
+                            <div class="flex flex-col items-center space-y-2">
+                                <img id="top-image" src="" alt="Selected Top" class="w-48 h-48 sm:w-64 sm:h-64 object-cover rounded-xl shadow-xl transition-all duration-300 transform hover:scale-105">
+                                <p class="text-lg font-semibold text-gray-300">Top</p>
+                            </div>
+                            <div class="text-3xl text-gray-400 font-bold hidden sm:block">+</div>
+                            <div class="flex flex-col items-center space-y-2">
+                                <img id="bottom-image" src="" alt="Selected Bottom" class="w-48 h-48 sm:w-64 sm:h-64 object-cover rounded-xl shadow-xl transition-all duration-300 transform hover:scale-105">
+                                <p class="text-lg font-semibold text-gray-300">Bottom</p>
+                            </div>
+                        </div>
+                        <div id="occasion-message" class="text-lg text-gray-400 italic mt-4"></div>
+                    </div>
+                    
+                    <button id="try-on-outfit-btn" class="w-full py-3 px-6 rounded-lg bg-purple-600 text-white font-bold text-lg hover:bg-purple-700 transition duration-300 shadow-lg">
+                        Try On This Outfit
+                    </button>
+                    <button id="start-over-btn" class="w-full py-3 px-6 rounded-lg bg-gray-700 text-gray-200 font-bold text-lg hover:bg-gray-600 transition duration-300">
+                        Start Over
+                    </button>
+                </section>
+            </div>
+        </div>
+
+        <!-- Virtual Try-On Page -->
+        <div id="tryon-page" class="hidden container-wrapper p-6">
+            <div class="card flex flex-col items-center space-y-8 max-w-5xl w-full">
+                <h1 class="text-4xl font-bold text-center mb-4 text-white">Virtual Try-On</h1>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8 w-full">
+                    <!-- Step 1: Upload a person image -->
+                    <div class="flex flex-col items-center text-center">
+                        <h2 class="text-xl font-semibold mb-2 text-gray-200">Step 1. Upload a person</h2>
+                        <label for="personImage" class="cursor-pointer button-gradient py-2 px-6 rounded-full font-semibold shadow-md hover:shadow-xl transition-all">
+                            Choose Image
+                        </label>
+                        <input type="file" id="personImage" class="hidden" accept="image/*">
+                        <div id="personImageContainer" class="image-container w-full mt-6">
+                            <p id="personPlaceholder" class="text-gray-400">Preview will appear here</p>
+                            <img id="personPreview" class="hidden w-full h-full object-contain" alt="Person Preview">
+                        </div>
+                    </div>
+        
+                    <!-- Step 2: Upload a top garment -->
+                    <div class="flex flex-col items-center text-center">
+                        <h2 class="text-xl font-semibold mb-2 text-gray-200">Step 2. Upload a top</h2>
+                        <label for="topImage" class="cursor-pointer button-gradient py-2 px-6 rounded-full font-semibold shadow-md hover:shadow-xl transition-all">
+                            Choose Image
+                        </label>
+                        <input type="file" id="topImage" class="hidden" accept="image/*">
+                        <div id="topImageContainer" class="image-container w-full mt-6">
+                            <p id="topPlaceholder" class="text-gray-400">Preview will appear here</p>
+                            <img id="topPreview" class="hidden w-full h-full object-contain" alt="Top Preview">
+                        </div>
+                    </div>
+        
+                    <!-- Step 3: Upload a bottom garment -->
+                    <div class="flex flex-col items-center text-center">
+                        <h2 class="text-xl font-semibold mb-2 text-gray-200">Step 3. Upload a bottom</h2>
+                        <label for="bottomImage" class="cursor-pointer button-gradient py-2 px-6 rounded-full font-semibold shadow-md hover:shadow-xl transition-all">
+                            Choose Image
+                        </label>
+                        <input type="file" id="bottomImage" class="hidden" accept="image/*">
+                        <div id="bottomImageContainer" class="image-container w-full mt-6">
+                            <p id="bottomPlaceholder" class="text-gray-400">Preview will appear here</p>
+                            <img id="bottomPreview" class="hidden w-full h-full object-contain" alt="Bottom Preview">
+                        </div>
+                    </div>
+        
+                    <!-- Step 4: Generate and view results -->
+                    <div class="flex flex-col items-center text-center">
+                        <h2 class="text-xl font-semibold mb-2 text-gray-200">Step 4. See Results</h2>
+                        <div id="resultContainer" class="image-container w-full mt-6">
+                            <div id="loadingSpinner" class="hidden spinner"></div>
+                            <p id="resultPlaceholder" class="text-gray-400">Merged result will appear here</p>
+                            <img id="resultPreview" class="hidden w-full h-full object-contain" alt="Result Preview">
+                        </div>
+                        <button id="runButton" class="w-full py-3 rounded-full text-lg font-bold text-white button-gradient mt-6 disabled-button" disabled>
+                            Generate Try-On
+                        </button>
+                    </div>
+                </div>
+                <button id="back-to-stylist-tryon" class="w-full py-3 px-6 rounded-lg bg-gray-700 text-gray-200 font-bold text-lg hover:bg-gray-600 transition duration-300 mt-8">
+                    Back to Stylist
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal for Messages -->
+    <div id="message-modal" class="modal">
+        <div class="modal-content text-center">
+            <p id="modal-message" class="text-lg text-white mb-6"></p>
+            <button onclick="document.getElementById('message-modal').style.display='none';" class="py-2 px-6 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition duration-300">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // REPLACE 'YOUR_API_KEY_HERE' with your actual API key
+        const apiKey = 'AIzaSyCPUcLAetY9m0yb4DxYWNyonB89unXdHeU';
+        const baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/';
+        
+        // --- Shared State and Navigation ---
+        const stylistPage = document.getElementById('stylist-page');
+        const tryonPage = document.getElementById('tryon-page');
+        const tryOnOutfitBtn = document.getElementById('try-on-outfit-btn');
+        const backToStylistBtn = document.getElementById('back-to-stylist-tryon');
+
+        let selectedTopItem = null;
+        let selectedBottomItem = null;
+
+        function showPage(page) {
+            stylistPage.classList.add('hidden');
+            tryonPage.classList.add('hidden');
+            page.classList.remove('hidden');
+        }
+
+        tryOnOutfitBtn.addEventListener('click', () => {
+            if (selectedTopItem && selectedBottomItem) {
+                // Pre-load the images and files for the try-on page
+                topFile = selectedTopItem.file;
+                bottomFile = selectedBottomItem.file;
+                
+                topPreview.src = selectedTopItem.dataUrl;
+                bottomPreview.src = selectedBottomItem.dataUrl;
+                topPreview.classList.remove('hidden');
+                bottomPreview.classList.remove('hidden');
+                topPlaceholder.classList.add('hidden');
+                bottomPlaceholder.classList.add('hidden');
+                
+                // Show the try-on page
+                showPage(tryonPage);
+                checkReadiness();
+            } else {
+                showMessageBox("Please select an outfit first.");
+            }
+        });
+
+        backToStylistBtn.addEventListener('click', () => {
+            showPage(stylistPage);
+            // Optionally clear the try-on state for a fresh start
+            personFile = null;
+            topFile = null;
+            bottomFile = null;
+            personPreview.classList.add('hidden');
+            topPreview.classList.add('hidden');
+            bottomPreview.classList.add('hidden');
+            personPlaceholder.classList.remove('hidden');
+            topPlaceholder.classList.remove('hidden');
+            bottomPlaceholder.classList.remove('hidden');
+            resultPreview.classList.add('hidden');
+            resultPlaceholder.classList.remove('hidden');
+            checkReadiness();
+        });
+
+        // --- Outfit Stylist Logic ---
+        const fileInput = document.getElementById('file-input');
+        const imagePreviews = document.getElementById('image-previews');
+        const occasionInput = document.getElementById('occasion-input');
+        const findOutfitBtn = document.getElementById('find-outfit-btn');
+        const uploadSection = document.getElementById('upload-section');
+        const resultSection = document.getElementById('result-section');
+        const loadingMessage = document.getElementById('loading-message');
+        const outfitDisplay = document.getElementById('outfit-display');
+        const topImage = document.getElementById('top-image');
+        const bottomImage = document.getElementById('bottom-image');
+        const occasionMessage = document.getElementById('occasion-message');
+        const startOverBtn = document.getElementById('start-over-btn');
+        
+        let uploadedItems = [];
+        
+        // A simple message box function instead of alert
+        function showMessageBox(message) {
+            const modal = document.getElementById('message-modal');
+            const modalMessage = document.getElementById('modal-message');
+            modalMessage.textContent = message;
+            modal.style.display = 'flex';
+        }
+        
+        fileInput.addEventListener('change', (event) => {
+            uploadedItems = [];
+            imagePreviews.innerHTML = '';
+            if (event.target.files.length === 0) {
+                imagePreviews.innerHTML = '<p class="col-span-full text-center text-gray-500">Your uploaded clothes will appear here.</p>';
+                return;
+            }
+        
+            Array.from(event.target.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const imageDataUrl = e.target.result;
+                    const base64Data = imageDataUrl.split(',')[1];
+                    const mimeType = file.type;
+        
+                    const previewContainer = document.createElement('div');
+                    previewContainer.className = 'relative group w-full h-48 overflow-hidden rounded-xl shadow-md transition-all duration-300 transform hover:scale-105';
+                    previewContainer.innerHTML = `
+                        <img src="${imageDataUrl}" alt="${file.name}" class="w-full h-full object-cover">
+                    `;
+                    imagePreviews.appendChild(previewContainer);
+                    
+                    uploadedItems.push({
+                        id: crypto.randomUUID(),
+                        fileName: file.name,
+                        base64Data: base64Data,
+                        mimeType: mimeType,
+                        dataUrl: imageDataUrl,
+                        file: file // Store the original file object
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+        
+        findOutfitBtn.addEventListener('click', async () => {
+            const occasion = occasionInput.value.trim();
+            if (uploadedItems.length < 2) {
+                showMessageBox('Please upload at least two clothing items to create an outfit.');
+                return;
+            }
+            if (!occasion) {
+                showMessageBox('Please describe the occasion.');
+                return;
+            }
+        
+            uploadSection.classList.add('hidden');
+            resultSection.classList.remove('hidden');
+            loadingMessage.classList.remove('hidden');
+            outfitDisplay.classList.add('hidden');
+        
+            try {
+                // Step 1: Classify all items using the Gemini API
+                const classificationPromises = uploadedItems.map(item => classifyItem(item));
+                const classifiedItems = await Promise.all(classificationPromises);
+                
+                const tops = classifiedItems.filter(item => item.category === 'top');
+                const bottoms = classifiedItems.filter(item => item.category === 'bottom');
+
+                if (tops.length === 0 || bottoms.length === 0) {
+                    throw new Error("Could not find at least one top and one bottom from your uploads. Please try again with different files.");
+                }
+
+                // Step 2: Select the best outfit from classified items
+                const topList = tops.map(item => `Top ID: ${item.id}`).join('\n');
+                const bottomList = bottoms.map(item => `Bottom ID: ${item.id}`).join('\n');
+                
+                const outfitPromptText = `
+                You are a professional fashion stylist. I am looking for a top and a bottom to wear for the following occasion: "${occasion}".
+                
+                Here is a list of available tops and their IDs:
+                ${topList}
+
+                Here is a list of available bottoms and their IDs:
+                ${bottomList}
+                
+                Identify a single top and a single bottom from the provided images that would create the most aesthetically pleasing and appropriate outfit for this occasion.
+                
+                Even if no perfect match exists, you must select a top and a bottom from the IDs provided, choosing the best possible combination from the available items. Do not select items not listed.
+
+                Your response must be a valid JSON object with the following structure:
+                {
+                    "selectedTopId": "the ID of the selected top",
+                    "selectedBottomId": "the ID of the selected bottom",
+                    "reasoning": "A brief, one-sentence explanation for why you chose this outfit."
+                }
+                
+                Do not add any text before or after the JSON object. Just provide the JSON.
+                `;
+
+                const outfitPayload = {
+                    contents: [{
+                        parts: [
+                            { text: outfitPromptText },
+                            ...uploadedItems.map(item => ({
+                                inlineData: {
+                                    mimeType: item.mimeType,
+                                    data: item.base64Data
+                                }
+                            }))
+                        ]
+                    }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            "type": "OBJECT",
+                            "properties": {
+                                "selectedTopId": { "type": "STRING" },
+                                "selectedBottomId": { "type": "STRING" },
+                                "reasoning": { "type": "STRING" }
+                            }
+                        }
+                    }
+                };
+        
+                const outfitResponse = await fetch(`${baseUrl}gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(outfitPayload)
+                });
+        
+                if (!outfitResponse.ok) {
+                    throw new Error(`HTTP error! status: ${outfitResponse.status}`);
+                }
+                
+                const outfitResult = await outfitResponse.json();
+                const jsonString = outfitResult.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!jsonString) {
+                    throw new Error("API response was not in the expected format.");
+                }
+                
+                const finalOutfit = JSON.parse(jsonString);
+
+                selectedTopItem = uploadedItems.find(item => item.id === finalOutfit.selectedTopId);
+                selectedBottomItem = uploadedItems.find(item => item.id === finalOutfit.selectedBottomId);
+        
+                if (selectedTopItem && selectedBottomItem) {
+                    topImage.src = selectedTopItem.dataUrl;
+                    bottomImage.src = selectedBottomItem.dataUrl;
+                    occasionMessage.textContent = finalOutfit.reasoning;
+                } else {
+                    throw new Error("Could not find the selected files in your uploaded items.");
+                }
+        
+            } catch (error) {
+                console.error('Error fetching outfit:', error);
+                showMessageBox(`Failed to get an outfit. Please try again. Error: ${error.message}`);
+                return;
+            } finally {
+                loadingMessage.classList.add('hidden');
+                outfitDisplay.classList.remove('hidden');
+            }
+        });
+        
+        // New function to classify a single item using the Gemini API
+        async function classifyItem(item) {
+            const classificationPrompt = `Is this a top or a bottom? Answer with a single word, either "top" or "bottom". Do not include any other text.`;
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: classificationPrompt },
+                        {
+                            inlineData: {
+                                mimeType: item.mimeType,
+                                data: item.base64Data
+                            }
+                        }
+                    ]
+                }]
+            };
+
+            const response = await fetch(`${baseUrl}gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Classification API error: ${response.status}`);
+            }
+            const result = await response.json();
+            const category = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase();
+            
+            return { ...item, category: category === 'top' || category === 'bottom' ? category : null };
+        }
+        
+        startOverBtn.addEventListener('click', () => {
+            // Reset everything
+            uploadedItems = [];
+            fileInput.value = '';
+            imagePreviews.innerHTML = '<p class="col-span-full text-center text-gray-500">Your uploaded clothes will appear here.</p>';
+            occasionInput.value = '';
+            selectedTopItem = null;
+            selectedBottomItem = null;
+            
+            resultSection.classList.add('hidden');
+            uploadSection.classList.remove('hidden');
+        });
+
+        // --- Virtual Try-On Logic ---
+        const personInput = document.getElementById('personImage');
+        const topInput = document.getElementById('topImage');
+        const bottomInput = document.getElementById('bottomImage');
+        const personPreview = document.getElementById('personPreview');
+        const topPreview = document.getElementById('topPreview');
+        const bottomPreview = document.getElementById('bottomPreview');
+        const personPlaceholder = document.getElementById('personPlaceholder');
+        const topPlaceholder = document.getElementById('topPlaceholder');
+        const bottomPlaceholder = document.getElementById('bottomPlaceholder');
+        const runButton = document.getElementById('runButton');
+        const resultPreview = document.getElementById('resultPreview');
+        const resultPlaceholder = document.getElementById('resultPlaceholder');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        
+        let personFile = null;
+        let topFile = null;
+        let bottomFile = null;
+        
+        function checkReadiness() {
+            if (personFile && (topFile || selectedTopItem) && (bottomFile || selectedBottomItem)) {
+                runButton.disabled = false;
+                runButton.classList.remove('disabled-button');
+                runButton.textContent = 'Generate Try-On';
+            } else {
+                runButton.disabled = true;
+                runButton.classList.add('disabled-button');
+                runButton.textContent = 'Upload all images to enable';
+            }
+        }
+        
+        async function readImageAsBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    resolve(reader.result.split(',')[1]);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        personInput.addEventListener('change', function(e) {
+            personFile = e.target.files[0];
+            if (personFile) {
+                const imageUrl = URL.createObjectURL(personFile);
+                personPreview.src = imageUrl;
+                personPreview.classList.remove('hidden');
+                personPlaceholder.classList.add('hidden');
+            } else {
+                personFile = null;
+                personPreview.src = '';
+                personPreview.classList.add('hidden');
+                personPlaceholder.classList.remove('hidden');
+            }
+            checkReadiness();
+        });
+        
+        topInput.addEventListener('change', function(e) {
+            topFile = e.target.files[0];
+            if (topFile) {
+                selectedTopItem = null; // Clear pre-loaded item if a new one is uploaded
+                const imageUrl = URL.createObjectURL(topFile);
+                topPreview.src = imageUrl;
+                topPreview.classList.remove('hidden');
+                topPlaceholder.classList.add('hidden');
+            } else {
+                topFile = null;
+                if (!selectedTopItem) {
+                    topPreview.src = '';
+                    topPreview.classList.add('hidden');
+                    topPlaceholder.classList.remove('hidden');
+                }
+            }
+            checkReadiness();
+        });
+        
+        bottomInput.addEventListener('change', function(e) {
+            bottomFile = e.target.files[0];
+            if (bottomFile) {
+                selectedBottomItem = null; // Clear pre-loaded item if a new one is uploaded
+                const imageUrl = URL.createObjectURL(bottomFile);
+                bottomPreview.src = imageUrl;
+                bottomPreview.classList.remove('hidden');
+                bottomPlaceholder.classList.add('hidden');
+            } else {
+                bottomFile = null;
+                if (!selectedBottomItem) {
+                    bottomPreview.src = '';
+                    bottomPreview.classList.add('hidden');
+                    bottomPlaceholder.classList.remove('hidden');
+                }
+            }
+            checkReadiness();
+        });
+        
+        runButton.addEventListener('click', async function() {
+            if (!personFile || !(topFile || selectedTopItem) || !(bottomFile || selectedBottomItem)) {
+                return;
+            }
+        
+            // Show loading state
+            resultPlaceholder.classList.add('hidden');
+            resultPreview.classList.add('hidden');
+            loadingSpinner.classList.remove('hidden');
+        
+            try {
+                const personBase64 = await readImageAsBase64(personFile);
+                const topBase64 = topFile ? await readImageAsBase64(topFile) : selectedTopItem.base64Data;
+                const topMimeType = topFile ? topFile.type : selectedTopItem.mimeType;
+                const bottomBase64 = bottomFile ? await readImageAsBase64(bottomFile) : selectedBottomItem.base64Data;
+                const bottomMimeType = bottomFile ? bottomFile.type : selectedBottomItem.mimeType;
+
+                const payload = {
+                    contents: [{
+                        parts: [
+                            { text: "Make the person in the first image wear the top from the second image and the bottom from the third image." },
+                            {
+                                inlineData: {
+                                    mimeType: personFile.type,
+                                    data: personBase64
+                                }
+                            },
+                            {
+                                inlineData: {
+                                    mimeType: topMimeType,
+                                    data: topBase64
+                                }
+                            },
+                            {
+                                inlineData: {
+                                    mimeType: bottomMimeType,
+                                    data: bottomBase64
+                                }
+                            }
+                        ]
+                    }],
+                    generationConfig: {
+                        responseModalities: ["TEXT", "IMAGE"],
+                    },
+                };
+        
+                const response = await fetch(`${baseUrl}gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+        
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error.message || `API call failed with status: ${response.status}`);
+                }
+        
+                const result = await response.json();
+                const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+        
+                if (base64Data) {
+                    const imageUrl = `data:image/png;base64,${base64Data}`;
+                    resultPreview.src = imageUrl;
+                    resultPreview.classList.remove('hidden');
+                } else {
+                    resultPlaceholder.textContent = 'Failed to generate image. Please try again.';
+                    resultPlaceholder.classList.remove('hidden');
+                }
+        
+            } catch (error) {
+                console.error('Error generating image:', error);
+                resultPlaceholder.textContent = `Error: ${error.message}`;
+                resultPlaceholder.classList.remove('hidden');
+            } finally {
+                loadingSpinner.classList.add('hidden');
+            }
+        });
+        
+        window.onload = function() {
+            checkReadiness();
+        }
+
+    </script>
+</body>
+</html>
