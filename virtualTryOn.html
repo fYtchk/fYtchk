@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Garment Try-On</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+        }
+        .image-container {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            background-color: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #0d9488;
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Step 1: Upload a person image -->
+        <div class="card flex flex-col items-center">
+            <div class="w-full text-center">
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">Step 1. Upload a person image</h2>
+                <label for="personImage" class="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
+                    Choose Image
+                </label>
+                <input type="file" id="personImage" class="hidden" accept="image/*">
+            </div>
+            <div id="personImageContainer" class="image-container w-full aspect-square mt-4 overflow-hidden">
+                <p id="personPlaceholder" class="text-gray-400">Preview will appear here</p>
+                <img id="personPreview" class="hidden w-full h-full object-contain" alt="Person Preview">
+            </div>
+        </div>
+
+        <!-- Step 2: Upload a garment image -->
+        <div class="card flex flex-col items-center">
+            <div class="w-full text-center">
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">Step 2. Upload a garment image</h2>
+                <label for="garmentImage" class="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
+                    Choose Image
+                </label>
+                <input type="file" id="garmentImage" class="hidden" accept="image/*">
+            </div>
+            <div id="garmentImageContainer" class="image-container w-full aspect-square mt-4 overflow-hidden">
+                <p id="garmentPlaceholder" class="text-gray-400">Preview will appear here</p>
+                <img id="garmentPreview" class="hidden w-full h-full object-contain" alt="Garment Preview">
+            </div>
+        </div>
+
+        <!-- Step 3: Generate and view results -->
+        <div class="card flex flex-col items-center">
+            <h2 class="text-xl font-semibold text-gray-800 mb-2">Step 3. See Results</h2>
+            <div id="resultContainer" class="image-container w-full aspect-square overflow-hidden mt-4">
+                <div id="loadingSpinner" class="hidden spinner"></div>
+                <p id="resultPlaceholder" class="text-gray-400">Merged result will appear here</p>
+                <img id="resultPreview" class="hidden w-full h-full object-contain" alt="Result Preview">
+            </div>
+            <button id="runButton" class="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg w-full mt-4 transition duration-200" disabled>
+                Generate Try-On
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const personInput = document.getElementById('personImage');
+        const garmentInput = document.getElementById('garmentImage');
+        const personPreview = document.getElementById('personPreview');
+        const garmentPreview = document.getElementById('garmentPreview');
+        const personPlaceholder = document.getElementById('personPlaceholder');
+        const garmentPlaceholder = document.getElementById('garmentPlaceholder');
+        const runButton = document.getElementById('runButton');
+        const resultPreview = document.getElementById('resultPreview');
+        const resultPlaceholder = document.getElementById('resultPlaceholder');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        let personFile = null;
+        let garmentFile = null;
+
+        function checkReadiness() {
+            if (personFile && garmentFile) {
+                runButton.disabled = false;
+                runButton.textContent = 'Generate Try-On';
+            } else {
+                runButton.disabled = true;
+                runButton.textContent = 'Upload both images to enable';
+            }
+        }
+
+        async function readImageAsBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    resolve(reader.result.split(',')[1]);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        personInput.addEventListener('change', function(e) {
+            personFile = e.target.files[0];
+            if (personFile) {
+                const imageUrl = URL.createObjectURL(personFile);
+                personPreview.src = imageUrl;
+                personPreview.classList.remove('hidden');
+                personPlaceholder.classList.add('hidden');
+            } else {
+                personFile = null;
+                personPreview.src = '';
+                personPreview.classList.add('hidden');
+                personPlaceholder.classList.remove('hidden');
+            }
+            checkReadiness();
+        });
+
+        garmentInput.addEventListener('change', function(e) {
+            garmentFile = e.target.files[0];
+            if (garmentFile) {
+                const imageUrl = URL.createObjectURL(garmentFile);
+                garmentPreview.src = imageUrl;
+                garmentPreview.classList.remove('hidden');
+                garmentPlaceholder.classList.add('hidden');
+            } else {
+                garmentFile = null;
+                garmentPreview.src = '';
+                garmentPreview.classList.add('hidden');
+                garmentPlaceholder.classList.remove('hidden');
+            }
+            checkReadiness();
+        });
+
+        runButton.addEventListener('click', async function() {
+            if (!personFile || !garmentFile) {
+                return;
+            }
+
+            // Show loading state
+            resultPlaceholder.classList.add('hidden');
+            resultPreview.classList.add('hidden');
+            loadingSpinner.classList.remove('hidden');
+
+            try {
+                const personBase64 = await readImageAsBase64(personFile);
+                const garmentBase64 = await readImageAsBase64(garmentFile);
+
+                const payload = {
+                    contents: [{
+                        parts: [
+                            { text: "Make the person in the first image wear the garment from the second image." },
+                            {
+                                inlineData: {
+                                    mimeType: personFile.type,
+                                    data: personBase64
+                                }
+                            },
+                            {
+                                inlineData: {
+                                    mimeType: garmentFile.type,
+                                    data: garmentBase64
+                                }
+                            }
+                        ]
+                    }],
+                    generationConfig: {
+                        responseModalities: ["TEXT", "IMAGE"],
+                    },
+                };
+                
+                // IMPORTANT: The API key is now provided by the environment.
+                const apiKey = "AIzaSyCPUcLAetY9m0yb4DxYWNyonB89unXdHeU";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
+
+                let attempt = 0;
+                const maxAttempts = 3;
+                let response;
+
+                while (attempt < maxAttempts) {
+                    try {
+                        response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (response.status !== 429) {
+                            break;
+                        }
+                        attempt++;
+                        const delay = Math.pow(2, attempt) * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    } catch (e) {
+                        attempt++;
+                        if (attempt >= maxAttempts) throw e;
+                        const delay = Math.pow(2, attempt) * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error.message || `API call failed with status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+
+                if (base64Data) {
+                    const imageUrl = `data:image/png;base64,${base64Data}`;
+                    resultPreview.src = imageUrl;
+                    resultPreview.classList.remove('hidden');
+                } else {
+                    resultPlaceholder.textContent = 'Failed to generate image. Please try again.';
+                    resultPlaceholder.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                console.error('Error generating image:', error);
+                resultPlaceholder.textContent = `Error: ${error.message}`;
+                resultPlaceholder.classList.remove('hidden');
+            } finally {
+                loadingSpinner.classList.add('hidden');
+            }
+        });
+
+        window.onload = function() {
+            checkReadiness();
+        }
+    </script>
+</body>
+</html>
